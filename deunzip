@@ -1,0 +1,39 @@
+#!/bin/bash
+
+if [[ $# -ne 1 ]]; then
+	echo "deunzip - by Amos Wenger aka nddrylliog"
+	echo "https://github.com/nddrylliog/deunzip"
+	echo "-------------------------------------"
+	echo
+	echo "Usage: $(basename $0) FILE.zip"
+	exit 1
+fi
+
+tmpf=$(mktemp)
+
+for i in $(unzip -l $1 | awk "{print $4}"); do
+	if [[ -f $i ]]; then
+		j=$(dirname $i)
+		if [[ -d $j && $j != "." ]]; then
+			echo $(readlink -f $j) >> $tmpf
+		fi
+	elif [[ -d $i ]]; then
+		echo $(readlink -f $i) >> $tmpf
+	fi
+done
+
+for i in $(unzip -l $1 | awk "{print $4}"); do
+	if [[ -f $i && $i != $1 ]]; then
+		echo "Deleting file $i..."
+		rm $i
+	fi
+done
+
+for i in $(cat $tmpf | sort | uniq | tac); do
+	echo "Removing directory $i..."
+	rmdir -p $i &> /dev/null
+done
+
+rm $tmpf
+
+echo 'Done!'
